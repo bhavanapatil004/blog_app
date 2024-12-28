@@ -1,0 +1,128 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'java-spring-app'  // Image name for Docker
+        DOCKER_TAG = 'latest'  // Docker tag
+        SPRING_PORT = '8083'   // External port for Spring Boot application
+        INTERNAL_PORT = '8080' // Internal port for Spring Boot application
+    }
+
+    tools {
+        jdk 'jdk'  // Ensure the JDK tool is configured in Jenkins
+        maven 'mvn'  // Ensure Maven tool is configured in Jenkins
+    }
+
+    stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()  // Clears the workspace at the start
+            }
+        }
+
+        stage('Checkout SCM') {
+            steps {
+                git branch: 'main', url: 'https://github.com/bhavanapatil004'  // Clone the repo
+            }
+        }
+        
+        stage('List Files') {
+            steps {
+                sh 'ls -la'  // List all files to verify Dockerfile presence
+            }
+        }       
+
+
+        stage('Check Dockerfile') {
+            steps {
+                sh 'ls -l'  // Lists files in the current directory (helpful for debugging)
+                script {
+                    if (!fileExists('Dockerfile')) {
+                        error('Dockerfile not found! Aborting build.')
+                    }
+                }
+            }
+        }
+
+        stage('Maven Compile') {
+            steps {
+                sh 'mvn clean compile'  // Runs Maven clean compile
+            }
+        }
+
+        stage('Maven Test') {
+            steps {
+                sh 'mvn test'  // Runs Maven test phase
+            }
+        }
+
+        stage('Maven Install') {
+            steps {
+                sh 'mvn install'  // Installs the project locally
+            }
+        }
+
+        stage('Build WAR File') {
+            steps {
+                sh 'mvn clean install -DskipTests=true'  // Builds the WAR file without running tests
+            }
+        }
+
+        stage("OWASP Dependency Check") {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --format XML', odcInstallation: 'DP-check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'  // Publish OWASP Dependency Check report
+            }
+        }
+
+        stage('Test Docker') {
+            steps {
+                sh 'docker --version'  // Verifies Docker is installed and available
+                sh 'docker ps'         // Lists running Docker containers to verify Docker is working
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build("${IMAGE_NAME}:${DOCKER_TAG}", "-f ./Dockerfile .")
+                }
+            }
+        }
+
+        stage('Run Spring Boot Docker Container') {
+            steps {
+                script {
+                    try {
+                        // Stop and remove existing container if it exists
+                        sh "docker stop ${IMAGE_NAME}_container || true"
+                        sh "docker rm ${IMAGE_NAME}_container || true"
+
+                        // Run Docker container for the Spring Boot application
+                        sh "docker run -d --name ${IMAGE_NAME}_container -p ${SPRING_PORT}:${INTERNAL_PORT} ${IMAGE_NAME}:${DOCKER_TAG}"
+                        
+                        // Optional: List running Docker containers to verify the Spring Boot app container is running
+                        sh 'docker ps'
+                    } catch (Exception e) {
+                        error("Failed to run Docker container: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build succeeded!'  // Message if build is successful
+        }
+
+        failure {
+            echo 'Build failed!'  // Message if build fails
+        }
+
+        always {
+            cleanWs()  // Clean workspace after the build (optional)
+        }
+    }
+}
+
