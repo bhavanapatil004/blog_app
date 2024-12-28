@@ -1,0 +1,13 @@
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/TwitterAppApplication.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/config/CustomUserDetails.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/config/CustomUserDetailsService.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/config/SecurityConfig.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/controller/PostController.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/controller/UserController.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/model/Post.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/model/User.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/repository/PostRepository.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/repository/UserRepository.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/service/PostService.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/service/UserService.java
+/home/amaanullah/Desktop/blog-main/src/main/java/com/example/twitterapp/service/UserServiceImpl.java
