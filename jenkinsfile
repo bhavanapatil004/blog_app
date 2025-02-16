@@ -1,128 +1,70 @@
 pipeline {
-    agent any
-
-    environment {
-        IMAGE_NAME = 'java-spring-app'  // Image name for Docker
-        DOCKER_TAG = 'latest'  // Docker tag
-        SPRING_PORT = '8083'   // External port for Spring Boot application
-        INTERNAL_PORT = '8080' // Internal port for Spring Boot application
-    }
+    agent any 
 
     tools {
-        jdk 'jdk'  // Ensure the JDK tool is configured in Jenkins
-        maven 'mvn'  // Ensure Maven tool is configured in Jenkins
-    }
+        jdk 'jdk'
+        maven 'maven'
+    }    
 
     stages {
-        stage('Clean Workspace') {
+        stage("Git Checkout") {
             steps {
-                cleanWs()  // Clears the workspace at the start
+                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/bhavanapatil004/blog_app.git'
             }
         }
 
-        stage('Checkout SCM') {
+        stage("Compile") {
             steps {
-                git branch: 'main', url: 'https://github.com/bhavanapatil004/blog_app'  // Clone the repo
+                sh "mvn clean compile"
             }
         }
-        
-        stage('List Files') {
-            steps {
-                sh 'ls -la'  // List all files to verify Dockerfile presence
-            }
-        }       
 
-
-        stage('Check Dockerfile') {
+        stage("Sonarqube Analysis") {
             steps {
-                sh 'ls -l'  // Lists files in the current directory (helpful for debugging)
                 script {
-                    if (!fileExists('Dockerfile')) {
-                        error('Dockerfile not found! Aborting build.')
+                    withSonarQubeEnv(credentialsId: 'sonar-token') {
+                        sh 'mvn sonar:sonar'
                     }
                 }
             }
         }
-
-        stage('Maven Compile') {
+        
+        stage("Build") {
             steps {
-                sh 'mvn clean compile'  // Runs Maven clean compile
-            }
-        }
-
-        stage('Maven Test') {
-            steps {
-                sh 'mvn test'  // Runs Maven test phase
-            }
-        }
-
-        stage('Maven Install') {
-            steps {
-                sh 'mvn install'  // Installs the project locally
-            }
-        }
-
-        stage('Build WAR File') {
-            steps {
-                sh 'mvn clean install -DskipTests=true'  // Builds the WAR file without running tests
+                sh "mvn clean install"
             }
         }
 
         stage("OWASP Dependency Check") {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --format XML', odcInstallation: 'DP-check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'  // Publish OWASP Dependency Check report
+                dependencyCheck additionalArguments: '--scan ./ --format HTML', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.html'
             }
         }
-
-        stage('Test Docker') {
-            steps {
-                sh 'docker --version'  // Verifies Docker is installed and available
-                sh 'docker ps'         // Lists running Docker containers to verify Docker is working
-            }
-        }
-
-        stage('Build Docker Image') {
+        
+        stage("Docker Build & Push") {
             steps {
                 script {
-                    docker.build("${IMAGE_NAME}:${DOCKER_TAG}", "-f ./Dockerfile .")
-                }
-            }
-        }
-
-        stage('Run Spring Boot Docker Container') {
-            steps {
-                script {
-                    try {
-                        // Stop and remove existing container if it exists
-                        sh "docker stop ${IMAGE_NAME}_container || true"
-                        sh "docker rm ${IMAGE_NAME}_container || true"
-
-                        // Run Docker container for the Spring Boot application
-                        sh "docker run -d --name ${IMAGE_NAME}_container -p ${SPRING_PORT}:${INTERNAL_PORT} ${IMAGE_NAME}:${DOCKER_TAG}"
-                        
-                        // Optional: List running Docker containers to verify the Spring Boot app container is running
-                        sh 'docker ps'
-                    } catch (Exception e) {
-                        error("Failed to run Docker container: ${e.message}")
+                    withDockerRegistry(credentialsId: 'Docker_cred', toolName: 'docker') {
+                        sh "docker build -t blogapp ."
+                        sh "docker tag blogapp bhavana0004/blogapp:v01"
+                        sh "docker push bhavana0004/blogapp:01"
                     }
                 }
             }
         }
-    }
-
-    post {
-        success {
-            echo 'Build succeeded!'  // Message if build is successful
+        
+        stage("TRIVY"){
+            steps{
+                sh "trivy image bhavana0004/blogapp:01"
+            }
         }
+        
+        stage("Deploy Using Docker"){
+            steps{
+                sh " docker run -d --name -p 8082:8080 bhavana0004/blogapp:01 "
+            }
+        }        
 
-        failure {
-            echo 'Build failed!'  // Message if build fails
-        }
-
-        always {
-            cleanWs()  // Clean workspace after the build (optional)
-        }
-    }
-}
-
+    }  // End of stages
+}  // End of pipeline
