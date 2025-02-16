@@ -47,7 +47,7 @@ pipeline {
                 script {
                     withDockerRegistry(credentialsId: 'Docker_cred', toolName: 'docker') {
                         sh "docker build -t blogapp ."
-                        sh "docker tag blogapp bhavana0004/blogapp:v01"
+                        sh "docker tag blogapp bhavana0004/blogapp:01"
                         sh "docker push bhavana0004/blogapp:01"
                     }
                 }
