@@ -1,6 +1,6 @@
-# Twitter-App
+# Blog-App
 
-Welcome to the **Twitter-App** repository! This is a simple, full-stack Java-based application that simulates a social media platform like Twitter. The app is built using **Spring Boot**, **Maven**, and **Docker**. It includes essential features like user registration, posting, and interacting with the platform.
+Welcome to the **Blog-App** repository! This is a simple, full-stack Java-based application that simulates a social media platform like Blog. The app is built using **Spring Boot**, **Maven**, and **Docker**. It includes essential features like user registration, posting, and interacting with the platform.
 
 ## Table of Contents
 
@@ -11,7 +11,7 @@ Welcome to the **Twitter-App** repository! This is a simple, full-stack Java-bas
 
 ## Overview
 
-The **Twitter-App** allows users to:
+The **Blog-App** allows users to:
 - Register and log in.
 - Create and manage posts.
 - Interact with posts (like, comment, etc.).
