@@ -62,7 +62,7 @@ pipeline {
         
         stage("Deploy Using Docker"){
             steps{
-                sh " docker run -d --name -p 8082:8080 bhavana0004/blogapp:01 "
+                sh " docker run -d -p 8082:8080 bhavana0004/blogapp:01 "
             }
         }        
 
